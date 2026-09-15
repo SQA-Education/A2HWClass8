@@ -103,13 +103,17 @@ function startRec(){
   recognition.interimResults=true;
   recognition.lang='en-US';
   recognition.onresult=function(e){
-    let sessionText='';
-    for(let i=0;i<e.results.length;i++){sessionText+=e.results[i][0].transcript+' ';}
-    spokenText=(persistedSpokenText+' '+sessionText).replace(/\s+/g,' ').trim();
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal)persistedSpokenText+=e.results[i][0].transcript+' ';
+      else interim+=e.results[i][0].transcript+' ';
+    }
+    if(persistedSpokenText.length>2000)persistedSpokenText=persistedSpokenText.slice(0,2000);
+    spokenText=(persistedSpokenText+' '+interim).replace(/\s+/g,' ').trim();
     if(box){box.textContent='Transcript: '+spokenText;box.classList.remove('hidden');}
   };
   recognition.onerror=function(e){console.log('Speech error:',e.error);};
-  recognition.onend=function(){persistedSpokenText=spokenText;if(isRec){try{recognition.start();}catch(err){console.log('Restart fail:',err);}}};
+  recognition.onend=function(){if(isRec){try{recognition.start();}catch(err){console.log('Restart fail:',err);}}};
   try{recognition.start();}catch(e){console.log('Start fail:',e);}
 }
 function stopRec(){isRec=false;if(recognition){try{recognition.stop();}catch(e){}recognition=null;}clearInterval(recTimer);document.getElementById('recBtn').classList.remove('recording');document.getElementById('recStatus').textContent='Recording saved!';setTimeout(scoreSpeaking,1500);}
